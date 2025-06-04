@@ -1,0 +1,11 @@
+# ==== SERVER ====
+Flask
+flask-cors
+
+# ==== CLIENT ====
+requests
+
+# ==== ОБЩЕЕ ====
+# Tkinter НЕ добавляется, потому что:
+# - на Windows/macOS он встроен в Python
+# - на Linux его устанавливают отдельно: sudo apt install python3-tk
