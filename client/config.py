@@ -1,2 +1,2 @@
-BASE_URL = "https://your-server-domain.com"
+BASE_URL = "https://schoolratingproject-production.up.railway.app"
 jwt_token = None
