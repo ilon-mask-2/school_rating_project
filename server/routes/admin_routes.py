@@ -1157,3 +1157,87 @@ def admin_teacher_detailed_ratings(teacher_id):
         import traceback
         traceback.print_exc()
         return jsonify({"error": "SQL execution failed", "details": str(e)}), 500
+
+admin_bp = Blueprint("admin", __name__)
+
+@admin_bp.route("/init-demo-data", methods=["POST"])
+def init_demo_data():
+    try:
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+
+        # Очистка
+        cursor.execute("DELETE FROM student_teacher_ratings")
+        cursor.execute("DELETE FROM teacher_student_ratings")
+        cursor.execute("DELETE FROM students")
+        cursor.execute("DELETE FROM teachers")
+        cursor.execute("DELETE FROM admins")
+
+        # === Ученики ===
+        students = [
+            ("Alice Ivanova", "alice", "pass123", "10A"),
+            ("Bob Petrov", "bob", "pass123", "10A"),
+            ("Clara Novak", "clara", "pass123", "10B"),
+            ("Dima Sokolov", "dima", "pass123", "10B"),
+        ]
+        cursor.executemany(
+            "INSERT INTO students (name, login, password, class) VALUES (?, ?, ?, ?)",
+            students
+        )
+
+        # === Преподаватели ===
+        teachers = [
+            ("Mr. Smith", "smith", "pass123", "Math"),
+            ("Mrs. Adams", "adams", "pass123", "Physics"),
+        ]
+        cursor.executemany(
+            "INSERT INTO teachers (name, login, password, subject) VALUES (?, ?, ?, ?)",
+            teachers
+        )
+
+        # === Администраторы ===
+        admins = [
+            ("Admin 1", "admin1", "admin123"),
+            ("Admin 2", "admin2", "admin123"),
+        ]
+        cursor.executemany(
+            "INSERT INTO admins (name, login, password) VALUES (?, ?, ?)",
+            admins
+        )
+
+        # === Оценки студент → преподаватель ===
+        ratings_st = [
+            (1, 1, "2025-06-01", 5, 5, 5, 5, "Отличный учитель!"),
+            (2, 1, "2025-06-02", 4, 4, 3, 4, "Хорошо объясняет."),
+            (3, 2, "2025-06-02", 5, 5, 4, 5, "Очень интересно."),
+            (4, 2, "2025-06-03", 3, 3, 3, 4, "Можно лучше."),
+            (1, 2, "2025-06-04", 4, 5, 4, 4, "Понравился подход."),
+        ]
+        cursor.executemany(
+            """INSERT INTO student_teacher_ratings 
+               (student_id, teacher_id, date, interest, respect, comfort, teaching, comment) 
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            ratings_st
+        )
+
+        # === Оценки преподаватель → студент ===
+        ratings_ts = [
+            (1, 1, "2025-06-01", 5, "Всегда активна"),
+            (1, 2, "2025-06-02", 4, "Хорошая работа"),
+            (2, 1, "2025-06-03", 3, "Есть куда расти"),
+            (3, 2, "2025-06-04", 5, "Очень сильная ученица"),
+            (4, 2, "2025-06-05", 4, "Хорошее понимание материала"),
+        ]
+        cursor.executemany(
+            """INSERT INTO teacher_student_ratings 
+               (teacher_id, student_id, date, grade, comment) 
+               VALUES (?, ?, ?, ?, ?)""",
+            ratings_ts
+        )
+
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success", "message": "All demo data inserted"})
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
