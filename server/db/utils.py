@@ -15,9 +15,16 @@ from flask import request
 
 SECRET_KEY = 'your_super_secret_key'  # Надёжно храни! Не показывай никому
 
+import os
+
+DATABASE = "server/db/database.db"
 
 def get_db():
-    """Получить соединение с базой данных, сохранить в g."""
+    if not os.path.exists(DATABASE):
+        print(f"❌ База данных не найдена по пути: {DATABASE}")
+    else:
+        print(f"✅ База данных найдена: {DATABASE}")
+
     if '_database' not in g:
         g._database = sqlite3.connect(DATABASE)
         g._database.row_factory = sqlite3.Row
