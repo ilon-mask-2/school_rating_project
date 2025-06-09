@@ -1,3 +1,8 @@
+import os
+print("📦 APP.PY ЗАПУСТИЛСЯ")
+print("📁 Содержимое /app/server/db:", os.listdir("server/db") if os.path.exists("server/db") else "❌ нет папки")
+print("📄 Есть ли database.db:", os.path.exists("server/db/database.db"))
+
 import sys
 import os
 from flask import jsonify
