@@ -21,44 +21,44 @@ def login():
         db = get_db()  # ← Здесь чаще всего и падает!
         print("✅ Соединение с БД установлено")
 
-    if not is_safe_input(login, allow_spaces=False) or not is_safe_input(password, allow_spaces=False):
-        return jsonify({"error": "Недопустимые символы"}), 400
-
-    if role not in ('student', 'teacher', 'admin'):
-        return jsonify({'status': 'error', 'message': 'Invalid role'}), 400
-
-    table_map = {
-        'student': 'students',
-        'teacher': 'teachers',
-        'admin': 'admins'
-    }
-    table = table_map[role]
-    name_field = 'name' if role != 'admin' else None
-
-    query = f"SELECT * FROM {table} WHERE login = ? AND password = ?"
-    with sqlite3.connect(DATABASE) as db:
-        db.row_factory = sqlite3.Row
-        result = db.execute(query, (login, password)).fetchone()
-
-    print("=== 📡 LOGIN REQUEST RECEIVED ===")
-    print("Login:", login)
-    print("Password:", password)
-    print("Role:", role)
-    print("Query used:", query)
-    print("Result:", result)
-
-    if result:
-        token = generate_token(result['id'], role)
-        response = {
-            'status': 'success',
-            'id': result['id'],
-            'token': token
+        if not is_safe_input(login, allow_spaces=False) or not is_safe_input(password, allow_spaces=False):
+            return jsonify({"error": "Недопустимые символы"}), 400
+    
+        if role not in ('student', 'teacher', 'admin'):
+            return jsonify({'status': 'error', 'message': 'Invalid role'}), 400
+    
+        table_map = {
+            'student': 'students',
+            'teacher': 'teachers',
+            'admin': 'admins'
         }
-        if name_field:
-            response['name'] = result[name_field]
-        return jsonify(response)
-    else:
-        return jsonify({'status': 'error', 'message': 'Invalid credentials'}), 401
+        table = table_map[role]
+        name_field = 'name' if role != 'admin' else None
+    
+        query = f"SELECT * FROM {table} WHERE login = ? AND password = ?"
+        with sqlite3.connect(DATABASE) as db:
+            db.row_factory = sqlite3.Row
+            result = db.execute(query, (login, password)).fetchone()
+    
+        print("=== 📡 LOGIN REQUEST RECEIVED ===")
+        print("Login:", login)
+        print("Password:", password)
+        print("Role:", role)
+        print("Query used:", query)
+        print("Result:", result)
+    
+        if result:
+            token = generate_token(result['id'], role)
+            response = {
+                'status': 'success',
+                'id': result['id'],
+                'token': token
+            }
+            if name_field:
+                response['name'] = result[name_field]
+            return jsonify(response)
+        else:
+            return jsonify({'status': 'error', 'message': 'Invalid credentials'}), 401
     except Exception as e:
         print("❌ Ошибка авторизации:", str(e))
         return jsonify({"error": "internal error", "details": str(e)}), 500
