@@ -1,6 +1,9 @@
 # ==== SERVER ====
 Flask
 flask-cors
+flask-limiter
+PyJWT
+
 
 # ==== CLIENT ====
 requests
