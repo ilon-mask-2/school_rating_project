@@ -20,6 +20,7 @@ import os
 DATABASE = "server/db/database.db"
 
 def get_db():
+    print("📂 Вызван get_db()")
     if not os.path.exists(DATABASE):
         print(f"❌ База данных не найдена по пути: {DATABASE}")
     else:
