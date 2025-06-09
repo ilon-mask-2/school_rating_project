@@ -8,6 +8,7 @@ auth_bp = Blueprint("auth", __name__)
 @auth_bp.route('/login', methods=['POST'])
 @limiter.limit("20 per minute")
 def login():
+    print("🟢 Вход в login() начался")
     try:
         data = request.get_json()
         print("🔐 Пришел login-запрос:", data)
