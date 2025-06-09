@@ -8,10 +8,18 @@ auth_bp = Blueprint("auth", __name__)
 @auth_bp.route('/login', methods=['POST'])
 @limiter.limit("20 per minute")
 def login():
-    data = request.get_json()
-    login = data.get('login')
-    password = data.get('password')
-    role = data.get('role')
+    try:
+        data = request.get_json()
+        print("🔐 Пришел login-запрос:", data)
+
+        login = data.get('login')
+        password = data.get('password')
+        role = data.get('role')
+
+        print(f"▶️ login={login}, role={role}")
+        
+        db = get_db()  # ← Здесь чаще всего и падает!
+        print("✅ Соединение с БД установлено")
 
     if not is_safe_input(login, allow_spaces=False) or not is_safe_input(password, allow_spaces=False):
         return jsonify({"error": "Недопустимые символы"}), 400
@@ -51,6 +59,9 @@ def login():
         return jsonify(response)
     else:
         return jsonify({'status': 'error', 'message': 'Invalid credentials'}), 401
+    except Exception as e:
+        print("❌ Ошибка авторизации:", str(e))
+        return jsonify({"error": "internal error", "details": str(e)}), 500
 
 @auth_bp.errorhandler(429)
 def ratelimit_handler(e):
