@@ -17,16 +17,16 @@ def login():
         role = data.get('role')
 
         print(f"▶️ login={login}, role={role}")
-        
-        db = get_db()  # ← Здесь чаще всего и падает!
-        print("✅ Соединение с БД установлено")
 
         if not is_safe_input(login, allow_spaces=False) or not is_safe_input(password, allow_spaces=False):
             return jsonify({"error": "Недопустимые символы"}), 400
-    
+
         if role not in ('student', 'teacher', 'admin'):
             return jsonify({'status': 'error', 'message': 'Invalid role'}), 400
-    
+
+        db = get_db()
+        print("✅ Соединение с БД установлено")
+
         table_map = {
             'student': 'students',
             'teacher': 'teachers',
@@ -34,19 +34,17 @@ def login():
         }
         table = table_map[role]
         name_field = 'name' if role != 'admin' else None
-    
+
         query = f"SELECT * FROM {table} WHERE login = ? AND password = ?"
-        with sqlite3.connect(DATABASE) as db:
-            db.row_factory = sqlite3.Row
-            result = db.execute(query, (login, password)).fetchone()
-    
+        result = db.execute(query, (login, password)).fetchone()
+
         print("=== 📡 LOGIN REQUEST RECEIVED ===")
         print("Login:", login)
         print("Password:", password)
         print("Role:", role)
         print("Query used:", query)
         print("Result:", result)
-    
+
         if result:
             token = generate_token(result['id'], role)
             response = {
