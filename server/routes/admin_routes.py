@@ -332,6 +332,37 @@ def update_teacher(teacher_id):
 
     return jsonify({"status": "success", "id": teacher_id})
 
+@admin_bp.route("/teachers_del/<int:teacher_id>", methods=["DELETE"])
+@token_required
+@limiter.limit("20 per minute")
+def delete_teacher(teacher_id):
+    conn = get_db()
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    # Проверка, существует ли преподаватель
+    cur.execute("SELECT * FROM teachers WHERE id = ?", (teacher_id,))
+    teacher = cur.fetchone()
+    if not teacher:
+        return jsonify({"error": "Преподаватель не найден"}), 404
+
+    # Удаление оценок, выставленных ученикам
+    cur.execute("DELETE FROM grade_from_teacher_to_student WHERE teacher_id = ?", (teacher_id,))
+    # Удаление оценок, полученных от учеников
+    cur.execute("DELETE FROM grade_from_student_to_teacher WHERE teacher_id = ?", (teacher_id,))
+    # Удаление учебных групп, закреплённых за этим преподавателем
+    cur.execute("DELETE FROM study_groups WHERE teacher_id = ?", (teacher_id,))
+    # Удаление самого преподавателя
+    cur.execute("DELETE FROM teachers WHERE id = ?", (teacher_id,))
+
+    conn.commit()
+
+    return jsonify({
+        "status": "deleted",
+        "id": teacher_id,
+        "name": teacher["name"]
+    })
+
 @admin_bp.route("/admins_get/<int:admin_id>", methods=["GET"])
 @token_required
 @limiter.limit("20 per minute")
