@@ -2,8 +2,9 @@ from flask import Blueprint, request, jsonify
 import sqlite3
 from server.config import DATABASE
 from server.db.utils import hash_password  # предполагается, что ты вынес хеш-функцию сюда
-from server.db.utils import is_safe_input, limiter, generate_token
 auth_bp = Blueprint("auth", __name__)
+from server.db.utils import get_db, hash_password, is_safe_input, limiter, generate_token
+
 
 @auth_bp.route('/login', methods=['POST'])
 @limiter.limit("20 per minute")
@@ -28,9 +29,9 @@ def login():
     name_field = 'name' if role != 'admin' else None
 
     query = f"SELECT * FROM {table} WHERE login = ? AND password = ?"
-    with sqlite3.connect(DATABASE) as db:
-        db.row_factory = sqlite3.Row
-        result = db.execute(query, (login, password)).fetchone()
+
+    db = get_db()
+    result = db.execute(query, (login, password)).fetchone()
 
     print("=== 📡 LOGIN REQUEST RECEIVED ===")
     print("Login:", login)
