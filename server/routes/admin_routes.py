@@ -204,8 +204,8 @@ def delete_student(student_id):
     # Удаляем ученика и все связи
     cur.execute("DELETE FROM students WHERE id = ?", (student_id,))
     cur.execute("DELETE FROM student_group_relationships WHERE student_id = ?", (student_id,))
-    cur.execute("DELETE FROM grade_from_student_to_teacher WHERE student_id = ?", (student_id,))
-    cur.execute("DELETE FROM grade_from_teacher_to_student WHERE student_id = ?", (student_id,))
+    cur.execute("DELETE FROM student_teacher_ratings WHERE student_id = ?", (student_id,))
+    cur.execute("DELETE FROM teacher_student_ratings WHERE student_id = ?", (student_id,))
     conn.commit()
 
     return jsonify({
