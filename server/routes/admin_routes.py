@@ -236,7 +236,7 @@ def update_student(student_id):
     password = data.get("password")
     if password:
         import hashlib
-        password = hashlib.sha256(password.encode()).hexdigest()
+        password = hash_password(password)
 
     with sqlite3.connect(DATABASE) as db:
         if password:
@@ -325,8 +325,7 @@ def update_teacher(teacher_id):
         return jsonify({"error": "Преподаватель не найден"}), 404
 
     if password:
-        import hashlib
-        password = hashlib.sha256(password.encode()).hexdigest()
+        password = hash_password(password)
     else:
         password = existing["password"]
 
