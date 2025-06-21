@@ -209,3 +209,22 @@ def get_student_account(student_id):
     except Exception as e:
         print(f"❌ Ошибка при получении аккаунта студента: {e}")
         return jsonify({"error": "Internal server error"}), 500
+
+
+@student_bp.route("/<int:student_id>/teachers", methods=["GET"])
+def get_teachers_for_student(student_id):
+    with sqlite3.connect(DATABASE) as db:
+        db.row_factory = sqlite3.Row
+        cursor = db.cursor()
+
+        cursor.execute("""
+            SELECT DISTINCT t.id, t.name
+            FROM teachers t
+            JOIN study_groups sg ON sg.teacher_id = t.id
+            JOIN student_group_relationships sgr ON sgr.group_id = sg.id
+            WHERE sgr.student_id = ?
+            ORDER BY t.name
+        """, (student_id,))
+
+        teachers = [dict(row) for row in cursor.fetchall()]
+    return jsonify(teachers)
