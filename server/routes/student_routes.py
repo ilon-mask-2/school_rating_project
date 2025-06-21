@@ -150,7 +150,9 @@ def rate_teacher():
     if not all(k in data for k in required):
         return jsonify({"error": "Missing fields"}), 400
 
-    today = date.today().isoformat()
+    from datetime import timedelta
+    today = date.today()
+    monday = (today - timedelta(days=today.weekday())).isoformat()
 
     with sqlite3.connect(DATABASE) as db:
         db.execute("""
@@ -160,7 +162,7 @@ def rate_teacher():
         """, (
             data["student_id"],
             data["teacher_id"],
-            today,
+            monday,
             data["interest"],
             data["teaching"],
             data["comfort"],
@@ -168,7 +170,7 @@ def rate_teacher():
         ))
         db.commit()
 
-    return jsonify({"status": "success", "date": today})
+    return jsonify({"status": "success", "date": monday})
 
 
 
