@@ -172,30 +172,32 @@ def rate_teacher():
 
 
 # 🔹 Получить аккаунт ученика
-@student_bp.route("/<int:student_id>", methods=["GET"])
-@limiter.limit("20 per minute")
+@app.route("/student/<int:student_id>", methods=["GET"])
 def get_student_account(student_id):
     with sqlite3.connect(DATABASE) as db:
         db.row_factory = sqlite3.Row
-        cursor = db.cursor()
-        cursor.execute("""
-            SELECT id, name, clas, login, phone, email, photo
-            FROM students
-            WHERE id = ?
-        """, (student_id,))
-        row = cursor.fetchone()
+        row = db.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
 
     if not row:
         return jsonify({"error": "Student not found"}), 404
 
-    photo_base64 = base64.b64encode(row["photo"]).decode('utf-8') if row["photo"] else None
+    # Преобразование фото в base64, если путь указан
+    photo_base64 = None
+    if row["photo"]:
+        photo_path = os.path.join(os.path.dirname(__file__), "..", "..", row["photo"])  # подстрой путь
+        try:
+            with open(photo_path, "rb") as f:
+                photo_base64 = base64.b64encode(f.read()).decode("utf-8")
+        except Exception as e:
+            print(f"⚠️ Ошибка при чтении фото: {e}")
+            photo_base64 = None
 
     return jsonify({
         "id": row["id"],
         "name": row["name"],
-        "class": row["clas"],  # возвращаем как "class", но из поля "clas"
         "login": row["login"],
-        "phone": row["phone"],
+        "clas": row["clas"],
         "email": row["email"],
-        "photo": photo_base64
+        "phone": row["phone"],
+        "photo": photo_base64,
     })
