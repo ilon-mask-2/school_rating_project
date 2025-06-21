@@ -1241,3 +1241,184 @@ def init_demo_data():
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
+
+@admin_bp.route("/init-db-and-seed", methods=["POST"])
+def init_db_and_seed():
+    import sqlite3
+    import os
+    import hashlib
+
+    def hash_password(password):
+        return hashlib.sha256(password.encode()).hexdigest()
+
+    try:
+        DB_PATH = os.path.join(os.path.dirname(__file__), "../db/database.db")
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        # Удаление таблиц
+        cursor.executescript("""
+        DROP TABLE IF EXISTS students;
+        DROP TABLE IF EXISTS teachers;
+        DROP TABLE IF EXISTS admins;
+        DROP TABLE IF EXISTS study_groups;
+        DROP TABLE IF EXISTS student_group_relationships;
+        DROP TABLE IF EXISTS student_teacher_ratings;
+        DROP TABLE IF EXISTS teacher_student_ratings;
+        """)
+
+        # Создание таблиц
+        cursor.executescript("""
+        CREATE TABLE students (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            login TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            class TEXT,
+            email TEXT,
+            phone TEXT
+        );
+        CREATE TABLE teachers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            login TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            subject TEXT,
+            email TEXT,
+            phone TEXT
+        );
+        CREATE TABLE admins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            login TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            email TEXT,
+            phone TEXT
+        );
+        CREATE TABLE study_groups (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            teacher_id INTEGER,
+            FOREIGN KEY (teacher_id) REFERENCES teachers(id)
+        );
+        CREATE TABLE student_group_relationships (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER NOT NULL,
+            study_group_id INTEGER NOT NULL,
+            FOREIGN KEY (student_id) REFERENCES students(id),
+            FOREIGN KEY (study_group_id) REFERENCES study_groups(id)
+        );
+        CREATE TABLE student_teacher_ratings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER NOT NULL,
+            teacher_id INTEGER NOT NULL,
+            interest INTEGER,
+            teaching INTEGER,
+            comfort INTEGER,
+            respect INTEGER,
+            comment TEXT,
+            date TEXT NOT NULL,
+            FOREIGN KEY (student_id) REFERENCES students(id),
+            FOREIGN KEY (teacher_id) REFERENCES teachers(id)
+        );
+        CREATE TABLE teacher_student_ratings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            teacher_id INTEGER NOT NULL,
+            student_id INTEGER NOT NULL,
+            clarity INTEGER,
+            behavior INTEGER,
+            diligence INTEGER,
+            comment TEXT,
+            date TEXT NOT NULL,
+            FOREIGN KEY (teacher_id) REFERENCES teachers(id),
+            FOREIGN KEY (student_id) REFERENCES students(id)
+        );
+        """)
+
+        # Студенты
+        students = [
+            ("Галкин Александр", "alexg", hash_password("12345"), "11A", "alexg@example.com", "+972501234567"),
+            ("Ирина Котова", "irinak", hash_password("password123"), "10Б", "irinak@example.com", "+972502345678"),
+            ("Семен Иванов", "semivan", hash_password("qwerty"), "11A", "semivan@example.com", "+972503456789"),
+            ("Мария Ли", "mariali", hash_password("mypwd"), "10Б", "mariali@example.com", "+972504567890"),
+        ]
+        cursor.executemany("""
+            INSERT INTO students (name, login, password, class, email, phone)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, students)
+
+        # Преподаватели
+        teachers = [
+            ("Томи Танака", "tomit", hash_password("teachme"), "Математика", "tomit@example.com", "+972505678901"),
+            ("Йони", "yoniy", hash_password("pass456"), "Кибербезопасность", "yoniy@example.com", "+972506789012"),
+            ("Лев Шмидт", "levs", hash_password("abc123"), "Физика", "levs@example.com", "+972507890123"),
+        ]
+        cursor.executemany("""
+            INSERT INTO teachers (name, login, password, subject, email, phone)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, teachers)
+
+        # Админ
+        admins = [
+            ("Admin", "admin1", hash_password("adminpass"), "admin@example.com", "+972508901234"),
+        ]
+        cursor.executemany("""
+            INSERT INTO admins (name, login, password, email, phone)
+            VALUES (?, ?, ?, ?, ?)
+        """, admins)
+
+        # Группы
+        groups = [
+            ("Группа 1", 1),  # Томи
+            ("Группа 2", 2),  # Йони
+        ]
+        cursor.executemany("""
+            INSERT INTO study_groups (name, teacher_id)
+            VALUES (?, ?)
+        """, groups)
+
+        # Студент-группа
+        student_group_relationships = [
+            (1, 1), (2, 2), (3, 1), (4, 2),
+        ]
+        cursor.executemany("""
+            INSERT INTO student_group_relationships (student_id, study_group_id)
+            VALUES (?, ?)
+        """, student_group_relationships)
+
+        # Оценки студент → преподаватель
+        ratings_st = [
+            (1, 1, 5, 5, 5, 5, "Прекрасно объясняет!", "2025-06-01"),
+            (2, 1, 4, 4, 4, 4, "Хороший преподаватель", "2025-06-02"),
+            (3, 2, 3, 3, 3, 3, "Можно лучше", "2025-06-03"),
+            (4, 3, 5, 5, 5, 5, "Очень круто", "2025-06-04"),
+            (1, 2, 4, 5, 4, 4, "Неплохо", "2025-06-05"),
+        ]
+        cursor.executemany("""
+            INSERT INTO student_teacher_ratings
+            (student_id, teacher_id, interest, teaching, comfort, respect, comment, date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, ratings_st)
+
+        # Оценки преподаватель → студент
+        ratings_ts = [
+            (1, 1, 5, 5, 5, "Отличный ученик", "2025-06-01"),
+            (2, 2, 4, 4, 4, "Хорошо старается", "2025-06-02"),
+            (3, 3, 3, 3, 3, "Средне", "2025-06-03"),
+            (1, 4, 5, 5, 5, "Очень умная", "2025-06-04"),
+            (3, 2, 4, 4, 4, "Подходит серьёзно", "2025-06-05"),
+        ]
+        cursor.executemany("""
+            INSERT INTO teacher_student_ratings
+            (teacher_id, student_id, clarity, behavior, diligence, comment, date)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, ratings_ts)
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({"status": "success", "message": "База создана и заполнена данными"}), 200
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
