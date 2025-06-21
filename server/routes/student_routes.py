@@ -201,7 +201,7 @@ def get_student_account(student_id):
             "id": row["id"],
             "name": row["name"],
             "login": row["login"],
-            "clas": row["clas"],
+            "class": row["clas"],
             "email": row["email"],
             "phone": row["phone"],
             "photo": photo_base64,
