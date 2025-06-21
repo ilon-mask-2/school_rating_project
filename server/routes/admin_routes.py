@@ -332,7 +332,7 @@ def update_teacher(teacher_id):
 
     return jsonify({"status": "success", "id": teacher_id})
 
-@admin_bp.route("/admins/<int:admin_id>", methods=["GET"])
+@admin_bp.route("/admins_get/<int:admin_id>", methods=["GET"])
 @token_required
 @limiter.limit("20 per minute")
 def get_admin(admin_id):
@@ -348,37 +348,37 @@ def get_admin(admin_id):
 
     return jsonify(dict(row))
 
-@admin_bp.route("/admins/<int:admin_id>", methods=["PUT"])
+@admin_bp.route("/admins_put/<int:admin_id>", methods=["PUT"])
 @token_required
 @limiter.limit("20 per minute")
 def update_admin(admin_id):
     data = request.get_json()
+
     login = data.get("login", "").strip()
     password = data.get("password", "").strip()
 
-    if not is_safe_input(login, allow_spaces=False) or (password and not is_safe_input(password, allow_spaces=False)):
-        return jsonify({"error": "Недопустимые символы"}), 400
     if not login:
         return jsonify({"error": "Логин обязателен"}), 400
+
+    if not is_safe_input(login, allow_spaces=False) or (password and not is_safe_input(password, allow_spaces=False)):
+        return jsonify({"error": "Недопустимые символы"}), 400
 
     conn = get_db()
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
-    # Проверка существования администратора
     cur.execute("SELECT * FROM admins WHERE id = ?", (admin_id,))
     existing = cur.fetchone()
     if not existing:
         return jsonify({"error": "Админ не найден"}), 404
 
-    # Хеширование пароля, если он был передан
     if password:
-        hashed_password = hash_password(password)
+        password = hash_password(password)
         cur.execute("""
             UPDATE admins
             SET login = ?, password = ?
             WHERE id = ?
-        """, (login, hashed_password, admin_id))
+        """, (login, password, admin_id))
     else:
         cur.execute("""
             UPDATE admins
@@ -388,7 +388,6 @@ def update_admin(admin_id):
 
     conn.commit()
 
-    # Возврат обновлённых данных
     cur.execute("SELECT id, login FROM admins WHERE id = ?", (admin_id,))
     updated_admin = dict(cur.fetchone())
     return jsonify({
@@ -396,7 +395,8 @@ def update_admin(admin_id):
         "admin": updated_admin
     })
 
-@admin_bp.route("/admins/<int:admin_id>", methods=["DELETE"])
+
+@admin_bp.route("/admins_del/<int:admin_id>", methods=["DELETE"])
 @token_required
 @limiter.limit("20 per minute")
 def delete_admin(admin_id):
