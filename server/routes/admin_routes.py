@@ -555,29 +555,34 @@ def create_teacher():
 @limiter.limit("20 per minute")
 def create_admin():
     data = request.get_json()
-    required = ["login", "password"]
+    required = ["name", "login", "password"]
 
+    # Проверка на наличие всех обязательных полей
     if not all(data.get(k) for k in required):
-        return jsonify({"error": "Заполните логин и пароль"}), 400
+        return jsonify({"error": "Заполните имя, логин и пароль"}), 400
 
+    name = data["name"].strip()
     login = data["login"].strip()
     password = data["password"].strip()
-    if not is_safe_input(login, allow_spaces=False) or not is_safe_input(password, allow_spaces=False):
+
+    # Валидация полей
+    if not is_safe_input(name) or not is_safe_input(login, allow_spaces=False) or not is_safe_input(password, allow_spaces=False):
         return jsonify({"error": "Недопустимые символы"}), 400
+
     conn = get_db()
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
-    # Проверка на уникальность логина
+    # Проверка уникальности логина
     cur.execute("SELECT id FROM admins WHERE login = ?", (login,))
     if cur.fetchone():
         return jsonify({"error": "Логин уже занят"}), 409
 
-    # Вставка нового админа
+    # Вставка нового администратора
     cur.execute("""
-        INSERT INTO admins (login, password)
-        VALUES (?, ?)
-    """, (login, password))
+        INSERT INTO admins (name, login, password)
+        VALUES (?, ?, ?)
+    """, (name, login, password))
     conn.commit()
 
     admin_id = cur.lastrowid
@@ -585,7 +590,8 @@ def create_admin():
     return jsonify({
         "status": "created",
         "id": admin_id,
-        "login": login
+        "login": login,
+        "name": name
     })
 
 @admin_bp.route("/groups", methods=["GET"])
