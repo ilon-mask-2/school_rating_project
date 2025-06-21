@@ -214,8 +214,6 @@ def delete_student(student_id):
         "name": student["name"]
     })
 
-import base64
-
 @admin_bp.route("/students/<int:student_id>", methods=["PUT"])
 @token_required
 @limiter.limit("20 per minute")
