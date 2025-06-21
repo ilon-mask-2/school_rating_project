@@ -292,7 +292,7 @@ def get_teacher(teacher_id):
     return jsonify(teacher_data)
 
 
-dmin_bp.route("/teachers_put/<int:teacher_id>", methods=["PUT"])
+@admin_bp.route("/teachers_put/<int:teacher_id>", methods=["PUT"])
 @token_required
 @limiter.limit("20 per minute")
 def update_teacher(teacher_id):
