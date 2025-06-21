@@ -308,13 +308,6 @@ def update_teacher(teacher_id):
     if not is_safe_input(login, allow_spaces=False) or not is_safe_input(password, allow_spaces=False):
         return jsonify({"error": "Недопустимые символы"}), 400
 
-    photo_blob = None
-    if photo_base64:
-        try:
-            photo_blob = base64.b64decode(photo_base64)
-        except Exception:
-            return jsonify({"error": "Ошибка при декодировании фото"}), 400
-
     conn = get_db()
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
@@ -328,6 +321,15 @@ def update_teacher(teacher_id):
         password = hash_password(password)
     else:
         password = existing["password"]
+
+    # Обработка фото
+    if photo_base64 and photo_base64.strip():
+        try:
+            photo_blob = base64.b64decode(photo_base64)
+        except Exception:
+            return jsonify({"error": "Ошибка при декодировании фото"}), 400
+    else:
+        photo_blob = existing["photo"]
 
     cur.execute("""
         UPDATE teachers
