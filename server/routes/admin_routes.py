@@ -256,7 +256,7 @@ def update_student(student_id):
     return jsonify({"status": "success", "id": student_id})
 
 
-@admin_bp.route("/teachers/<int:teacher_id>", methods=["GET"])
+@admin_bp.route("/teachers_get/<int:teacher_id>", methods=["GET"])
 @token_required
 @limiter.limit("20 per minute")
 def get_teacher(teacher_id):
@@ -291,7 +291,7 @@ def get_teacher(teacher_id):
 
     return jsonify(teacher_data)
 
-@admin_bp.route("/teachers/<int:teacher_id>", methods=["PUT"])
+@admin_bp.route("/teachers_put/<int:teacher_id>", methods=["PUT"])
 @token_required
 @limiter.limit("20 per minute")
 def update_teacher(teacher_id):
