@@ -172,32 +172,41 @@ def rate_teacher():
 
 
 # 🔹 Получить аккаунт ученика
-@app.route("/student/<int:student_id>", methods=["GET"])
+
+student_bp = Blueprint("student", __name__)
+
+@student_bp.route("/<int:student_id>", methods=["GET"])
 def get_student_account(student_id):
-    with sqlite3.connect(DATABASE) as db:
-        db.row_factory = sqlite3.Row
-        row = db.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
+    try:
+        with sqlite3.connect(DATABASE) as db:
+            db.row_factory = sqlite3.Row
+            row = db.execute("SELECT * FROM students WHERE id = ?", (student_id,)).fetchone()
 
-    if not row:
-        return jsonify({"error": "Student not found"}), 404
+        if not row:
+            return jsonify({"error": "Student not found"}), 404
 
-    # Преобразование фото в base64, если путь указан
-    photo_base64 = None
-    if row["photo"]:
-        photo_path = os.path.join(os.path.dirname(__file__), "..", "..", row["photo"])  # подстрой путь
-        try:
-            with open(photo_path, "rb") as f:
-                photo_base64 = base64.b64encode(f.read()).decode("utf-8")
-        except Exception as e:
-            print(f"⚠️ Ошибка при чтении фото: {e}")
-            photo_base64 = None
+        # Подготовка фото (если поле содержит относительный путь к файлу)
+        photo_base64 = None
+        photo_value = row["photo"]
+        if photo_value:
+            photo_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", photo_value))
+            if os.path.isfile(photo_path):
+                try:
+                    with open(photo_path, "rb") as f:
+                        photo_base64 = base64.b64encode(f.read()).decode("utf-8")
+                except Exception as e:
+                    print(f"⚠️ Ошибка при чтении фото: {e}")
 
-    return jsonify({
-        "id": row["id"],
-        "name": row["name"],
-        "login": row["login"],
-        "clas": row["clas"],
-        "email": row["email"],
-        "phone": row["phone"],
-        "photo": photo_base64,
-    })
+        return jsonify({
+            "id": row["id"],
+            "name": row["name"],
+            "login": row["login"],
+            "clas": row["clas"],
+            "email": row["email"],
+            "phone": row["phone"],
+            "photo": photo_base64,
+        })
+    
+    except Exception as e:
+        print(f"❌ Ошибка при получении аккаунта студента: {e}")
+        return jsonify({"error": "Internal server error"}), 500
