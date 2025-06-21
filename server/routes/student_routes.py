@@ -171,11 +171,10 @@ def rate_teacher():
     return jsonify({"status": "success", "date": today})
 
 
-# 🔹 Получить аккаунт ученика
-
-student_bp = Blueprint("student", __name__)
 
 @student_bp.route("/<int:student_id>", methods=["GET"])
+@token_required
+@limiter.limit("20 per minute")
 def get_student_account(student_id):
     try:
         with sqlite3.connect(DATABASE) as db:
