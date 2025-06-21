@@ -4,7 +4,7 @@ flask-cors
 
 # ==== CLIENT ====
 requests
-
+flask-limiter
 # ==== ОБЩЕЕ ====
 # Tkinter НЕ добавляется, потому что:
 # - на Windows/macOS он встроен в Python
