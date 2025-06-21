@@ -15,7 +15,7 @@ ENV PYTHONPATH=/app
 
 # Открываем порт 5000 (если Railway или Docker его требует)
 EXPOSE 5000
-# Запуск Flask-приложения
-CMD ["python", "server/wsgi.py"]
 
 COPY server/db/database.db /app/server/db/database.db
+# Запуск Flask-приложения
+CMD ["python", "server/wsgi.py"]
