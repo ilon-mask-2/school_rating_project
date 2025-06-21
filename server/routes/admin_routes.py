@@ -1158,8 +1158,6 @@ def admin_teacher_detailed_ratings(teacher_id):
         traceback.print_exc()
         return jsonify({"error": "SQL execution failed", "details": str(e)}), 500
 
-admin_bp = Blueprint("admin", __name__)
-
 @admin_bp.route("/init-demo-data", methods=["POST"])
 def init_demo_data():
     try:
