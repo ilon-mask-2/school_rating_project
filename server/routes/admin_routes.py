@@ -291,7 +291,8 @@ def get_teacher(teacher_id):
 
     return jsonify(teacher_data)
 
-@admin_bp.route("/teachers_put/<int:teacher_id>", methods=["PUT"])
+
+@admin_bp.route("/teachers/<int:teacher_id>", methods=["PUT"])
 @token_required
 @limiter.limit("20 per minute")
 def update_teacher(teacher_id):
@@ -303,9 +304,10 @@ def update_teacher(teacher_id):
     email = data.get("email", "").strip()
     phone = data.get("phone", "").strip()
     photo_base64 = data.get("photo")
+
     if not is_safe_input(login, allow_spaces=False) or not is_safe_input(password, allow_spaces=False):
         return jsonify({"error": "Недопустимые символы"}), 400
-    # Преобразуем фото из base64 в BLOB
+
     photo_blob = None
     if photo_base64:
         try:
@@ -317,13 +319,17 @@ def update_teacher(teacher_id):
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
-    # Проверка существования преподавателя
     cur.execute("SELECT * FROM teachers WHERE id = ?", (teacher_id,))
     existing = cur.fetchone()
     if not existing:
         return jsonify({"error": "Преподаватель не найден"}), 404
 
-    # Обновление данных
+    if password:
+        import hashlib
+        password = hashlib.sha256(password.encode()).hexdigest()
+    else:
+        password = existing["password"]
+
     cur.execute("""
         UPDATE teachers
         SET name = ?, login = ?, password = ?, email = ?, phone = ?, photo = ?
@@ -331,10 +337,7 @@ def update_teacher(teacher_id):
     """, (name, login, password, email, phone, photo_blob, teacher_id))
     conn.commit()
 
-    return jsonify({
-        "status": "updated",
-        "id": teacher_id
-    })
+    return jsonify({"status": "updated", "id": teacher_id})
 
 @admin_bp.route("/admins/<int:admin_id>", methods=["GET"])
 @token_required
