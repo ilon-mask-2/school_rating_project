@@ -140,7 +140,7 @@ def get_filter_options():
         "groups": groups
     })
 
-@admin_bp.route("/students/<int:student_id>", methods=["GET"])
+@admin_bp.route("/students_get/<int:student_id>", methods=["GET"])
 @token_required
 @limiter.limit("20 per minute")
 def get_student(student_id):
@@ -187,7 +187,7 @@ def get_student(student_id):
 
     return jsonify(student_data)
 
-@admin_bp.route("/students/<int:student_id>", methods=["DELETE"])
+@admin_bp.route("/students_del/<int:student_id>", methods=["DELETE"])
 @token_required
 @limiter.limit("20 per minute")
 def delete_student(student_id):
@@ -214,7 +214,7 @@ def delete_student(student_id):
         "name": student["name"]
     })
 
-@admin_bp.route("/students/<int:student_id>", methods=["PUT"])
+@admin_bp.route("/students_put/<int:student_id>", methods=["PUT"])
 @token_required
 @limiter.limit("20 per minute")
 def update_student(student_id):
