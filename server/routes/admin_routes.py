@@ -214,44 +214,49 @@ def delete_student(student_id):
         "name": student["name"]
     })
 
+import base64
+
 @admin_bp.route("/students/<int:student_id>", methods=["PUT"])
 @token_required
 @limiter.limit("20 per minute")
 def update_student(student_id):
     data = request.get_json()
 
-    name = data.get("name", "").strip()
-    student_class = data.get("class", "").strip().upper()
-    login = data.get("login", "").strip()
-    password = data.get("password", "").strip()
-    email = data.get("email", "").strip()
-    phone = data.get("phone", "").strip()
-    photo_base64 = data.get("photo")
-    if not is_safe_input(login, allow_spaces=False) or not is_safe_input(password, allow_spaces=False):
-        return jsonify({"error": "Недопустимые символы"}), 400
+    required_fields = ["name", "class", "login", "email", "phone"]
+    if not all(field in data for field in required_fields):
+        return jsonify({"error": "Missing fields"}), 400
 
-    # Преобразование фото
-    photo_blob = base64.b64decode(photo_base64) if photo_base64 else None
+    photo = data.get("photo")
+    if photo:
+        try:
+            photo = base64.b64decode(photo)
+        except Exception:
+            return jsonify({"error": "Invalid photo format"}), 400
+    else:
+        photo = None
 
-    conn = get_db()
-    conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
+    password = data.get("password")
+    if password:
+        import hashlib
+        password = hashlib.sha256(password.encode()).hexdigest()
 
-    # Проверка, существует ли ученик
-    cur.execute("SELECT * FROM students WHERE id = ?", (student_id,))
-    existing = cur.fetchone()
-    if not existing:
-        return jsonify({"error": "Ученик не найден"}), 404
+    with sqlite3.connect(DATABASE) as db:
+        if password:
+            db.execute("""
+                UPDATE students
+                SET name = ?, clas = ?, login = ?, password = ?, email = ?, phone = ?, photo = ?
+                WHERE id = ?
+            """, (data["name"], data["class"], data["login"], password, data["email"], data["phone"], photo, student_id))
+        else:
+            db.execute("""
+                UPDATE students
+                SET name = ?, clas = ?, login = ?, email = ?, phone = ?, photo = ?
+                WHERE id = ?
+            """, (data["name"], data["class"], data["login"], data["email"], data["phone"], photo, student_id))
+        db.commit()
 
-    # Обновление
-    cur.execute("""
-        UPDATE students
-        SET name = ?, clas = ?, login = ?, password = ?, email = ?, phone = ?, photo = ?
-        WHERE id = ?
-    """, (name, student_class, login, password, email, phone, photo_blob, student_id))
+    return jsonify({"status": "success", "id": student_id})
 
-    conn.commit()
-    return jsonify({"status": "updated", "id": student_id})
 
 @admin_bp.route("/teachers/<int:teacher_id>", methods=["GET"])
 @token_required
