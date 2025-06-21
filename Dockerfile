@@ -15,6 +15,6 @@ ENV PYTHONPATH=/app
 
 # Открываем порт 5000 (если Railway или Docker его требует)
 EXPOSE 5000
-
+RUN python server/db/seed_database.py
 # Запуск Flask-приложения
 CMD ["python", "server/wsgi.py"]
