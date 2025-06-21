@@ -1,3 +1,8 @@
+import os
+print("📦 APP.PY ЗАПУСТИЛСЯ")
+print("📁 Содержимое /app/server/db:", os.listdir("server/db") if os.path.exists("server/db") else "❌ нет папки")
+print("📄 Есть ли database.db:", os.path.exists("server/db/database.db"))
+
 import sys
 import os
 from flask import jsonify
@@ -11,7 +16,6 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
-
 # Указываем backend через конфигурацию (вместо storage=)
 app.config["RATELIMIT_STORAGE_URL"] = "memory://"
 
@@ -32,6 +36,9 @@ app.register_blueprint(student_bp, url_prefix="/student")
 app.register_blueprint(teacher_bp, url_prefix="/teacher")
 app.register_blueprint(admin_bp, url_prefix="/admin")
 
+print("📦 Зарегистрированные маршруты:")
+for rule in app.url_map.iter_rules():
+    print(rule)
 # 🧹 Закрытие соединения с БД
 @app.teardown_appcontext
 def shutdown_session(exception=None):
@@ -40,7 +47,3 @@ def shutdown_session(exception=None):
 @app.errorhandler(413)
 def request_entity_too_large(error):
     return jsonify(error="Размер запроса превышает допустимый лимит (5 МБ)."), 413
-
-# 🚀 Запуск приложения
-if __name__ == "__main__":
-    app.run(debug=True)
