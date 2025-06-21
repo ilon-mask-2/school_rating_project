@@ -17,3 +17,5 @@ ENV PYTHONPATH=/app
 EXPOSE 5000
 # Запуск Flask-приложения
 CMD ["python", "server/wsgi.py"]
+
+COPY server/db/database.db /app/server/db/database.db
