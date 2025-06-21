@@ -173,7 +173,6 @@ def rate_teacher():
 
 # 🔹 Получить аккаунт ученика
 @student_bp.route("/<int:student_id>", methods=["GET"])
-@token_required
 @limiter.limit("20 per minute")
 def get_student_account(student_id):
     with sqlite3.connect(DATABASE) as db:
