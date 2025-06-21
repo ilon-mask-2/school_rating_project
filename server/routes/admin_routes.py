@@ -340,7 +340,7 @@ def get_admin(admin_id):
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
-    cur.execute("SELECT id, login FROM admins WHERE id = ?", (admin_id,))
+    cur.execute("SELECT id, login, name FROM admins WHERE id = ?", (admin_id,))
     row = cur.fetchone()
 
     if not row:
@@ -353,32 +353,32 @@ def get_admin(admin_id):
 @limiter.limit("20 per minute")
 def update_admin(admin_id):
     data = request.get_json()
-
     login = data.get("login", "").strip()
     password = data.get("password", "").strip()
 
-    if not login:
-        return jsonify({"error": "Логин обязателен"}), 400
-
     if not is_safe_input(login, allow_spaces=False) or (password and not is_safe_input(password, allow_spaces=False)):
         return jsonify({"error": "Недопустимые символы"}), 400
+    if not login:
+        return jsonify({"error": "Логин обязателен"}), 400
 
     conn = get_db()
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
+    # Проверка существования администратора
     cur.execute("SELECT * FROM admins WHERE id = ?", (admin_id,))
     existing = cur.fetchone()
     if not existing:
         return jsonify({"error": "Админ не найден"}), 404
 
+    # Хеширование пароля, если он был передан
     if password:
-        password = hash_password(password)
+        hashed_password = hash_password(password)
         cur.execute("""
             UPDATE admins
             SET login = ?, password = ?
             WHERE id = ?
-        """, (login, password, admin_id))
+        """, (login, hashed_password, admin_id))
     else:
         cur.execute("""
             UPDATE admins
@@ -388,12 +388,13 @@ def update_admin(admin_id):
 
     conn.commit()
 
+    # Возврат обновлённых данных
     cur.execute("SELECT id, login FROM admins WHERE id = ?", (admin_id,))
     updated_admin = dict(cur.fetchone())
     return jsonify({
         "status": "success",
         "admin": updated_admin
-    })
+    }) 
 
 
 @admin_bp.route("/admins_del/<int:admin_id>", methods=["DELETE"])
